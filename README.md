@@ -63,6 +63,9 @@
 
 Vyper Mini is a performance-focused, scaled-down version of Vyper Dex. It specifically showcases the "Trenches" page to demonstrate how to efficiently handle very fast, real-time batch-processed data updates on a massive virtualized card list in React. 
 
+> [!NOTE]
+> All token metrics, prices, and update events in this repository are mock data generated locally on a simulated loop to emulate live market activity without requiring an active blockchain connection.
+
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
 ### Built With
