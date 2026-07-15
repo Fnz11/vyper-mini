@@ -5,10 +5,16 @@ import { NEW_POOL_AGE_THRESHOLD_MS, TRENCH_LIMIT_NEW, TRENCH_LIMIT_LOCKED, TRENC
 import type { TrenchType, Pool } from "../_types/pool.types"
 import { usePoolStore } from "../_stores/usePoolStore"
 
+type PoolWithMcap = Pool & { _mcap: number }
+
+function withMcap(pool: Pool): PoolWithMcap {
+  return { ...pool, _mcap: parseFloat(pool.marketCapUsd) }
+}
+
 function sortByMcapDesc(pools: Pool[]): Pool[] {
-  return [...pools].sort((a, b) =>
-    parseFloat(b.marketCapUsd) - parseFloat(a.marketCapUsd)
-  )
+  const withFloats = pools.map(withMcap)
+  withFloats.sort((a, b) => b._mcap - a._mcap)
+  return withFloats
 }
 
 function sortByNewest(pools: Pool[]): Pool[] {

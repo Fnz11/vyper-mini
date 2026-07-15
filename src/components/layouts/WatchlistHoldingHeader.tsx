@@ -15,8 +15,15 @@ import {
 } from "@/components/ui/tooltip"
 import { cn } from "@/lib/utils"
 
-const tokenThumb = (symbol: string) =>
-  createAvatar(glass, { seed: symbol, size: 20 }).toDataUri()
+// Module-level cache: tokenThumb called once per symbol, never in render loop
+const thumbCache = new Map<string, string>()
+function tokenThumb(symbol: string): string {
+  const cached = thumbCache.get(symbol)
+  if (cached) return cached
+  const uri = createAvatar(glass, { seed: symbol, size: 20 }).toDataUri()
+  thumbCache.set(symbol, uri)
+  return uri
+}
 
 interface MarqueeItem {
   symbol: string; name: string; price: number; changePercent: number
@@ -52,7 +59,9 @@ const INITIAL_HOLDINGS: MarqueeItem[] = [
   { symbol: "BONK", name: "Bonk", price: 0.000023, changePercent: 4.5 },
 ]
 
-const formatPrice = (price: number) => {
+const JITTER_THROTTLE_MS = 1000
+
+function formatPrice(price: number) {
   if (price < 0.01) return `$${price.toFixed(6)}`
   return `$${price.toFixed(2)}`
 }
@@ -71,13 +80,19 @@ export function WatchlistHoldingHeader() {
   const [watchlist, setWatchlist] = useState(INITIAL_WATCHLIST)
   const [holdings, setHoldings] = useState(INITIAL_HOLDINGS)
   const scrollContainerRef = useRef<HTMLDivElement>(null)
+  const lastJitterRef = useRef<number>(0)
 
   useEffect(() => {
     return usePoolStore.subscribe((state, prevState) => {
-      if (state.changesCount !== prevState.changesCount) {
-        setWatchlist(jitter)
-        setHoldings(jitter)
-      }
+      if (state.changesCount === prevState.changesCount) return
+
+      // Throttle: max 1 jitter update per second regardless of how fast store updates
+      const now = Date.now()
+      if (now - lastJitterRef.current < JITTER_THROTTLE_MS) return
+      lastJitterRef.current = now
+
+      setWatchlist(jitter)
+      setHoldings(jitter)
     })
   }, [])
 

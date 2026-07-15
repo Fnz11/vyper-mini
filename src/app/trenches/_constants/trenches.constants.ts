@@ -1,4 +1,4 @@
-export const BATCH_INTERVAL_MS = 2
+export const BATCH_INTERVAL_MS = 250
 export const BATCH_SIZE = 30
 export const MAX_POOL_COUNT = 150
 export const NEW_POOL_AGE_THRESHOLD_MS = 3600 * 1000

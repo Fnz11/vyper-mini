@@ -13,11 +13,23 @@ import {
 } from "@/components/ui/popover"
 import type { DexType } from "@/app/trenches/_types/pool.types"
 
+// Module-level cache: createAvatar called once per symbol, never per render
+const avatarCache = new Map<string, string>()
+
+function getCachedAvatar(symbol: string, size: number): string {
+  const key = `${symbol}-${size}`
+  const cached = avatarCache.get(key)
+  if (cached) return cached
+  const uri = createAvatar(glass, { seed: symbol, size }).toDataUri()
+  avatarCache.set(key, uri)
+  return uri
+}
+
 function TokenImage({ src, symbol, dex, size = 80 }: {
   src?: string; symbol: string; dex?: DexType; size?: number
 }) {
   const [imgError, setImgError] = useState(false)
-  const fallback = createAvatar(glass, { seed: symbol, size }).toDataUri()
+  const fallback = getCachedAvatar(symbol, size)
   const imgSrc = src && !imgError ? src : fallback
 
   return (

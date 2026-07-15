@@ -10,7 +10,6 @@ import PoolStat, { PoolStatBooleanTooltipContent } from "@/app/trenches/_compone
 import { BuyButton } from "@/components/customs/BuyButton"
 import { TokenAge } from "@/components/customs/TokenAge"
 import { TokenSocials } from "@/components/customs/TokenSocials"
-
 import { formatCompactNumber } from "@/lib/format-number"
 import { cn } from "@/lib/utils"
 
@@ -19,12 +18,16 @@ interface TrenchCardProps {
   index: number
 }
 
+const NEW_FLASH_MS = 2000
+
 const TrenchCard = memo(function TrenchCard({ address, index }: TrenchCardProps) {
-  const pool = usePoolStore((s) => s.pools.get(address))
+  // Subscribe to per-address version number only — re-renders ONLY when this pool changes
+  const version = usePoolStore((s) => s.getPoolVersion(address))
+  const pool = usePoolStore.getState().getPoolByAddress(address)
 
   if (!pool) return null
 
-  const isNew = Date.now() - pool.eventTimestamp < 2000
+  const isNew = Date.now() - pool.eventTimestamp < NEW_FLASH_MS
 
   return (
     <div
@@ -56,14 +59,14 @@ const TrenchCard = memo(function TrenchCard({ address, index }: TrenchCardProps)
                   value={pool.liquidityUsd}
                   type="liquidity"
                   styleVariant="ghost"
-                  tooltipContent={<div className="flex flex-col items-center"><span>Liquidity: ${formatCompactNumber(parseFloat(pool.liquidityUsd))}</span></div>}
+                  tooltipContent={<LiqTooltip value={pool.liquidityUsd} />}
                 />
                 <PoolStat
                   icon={<Users size={12} />}
                   value={pool.holders}
                   type="holders"
                   styleVariant="ghost"
-                  tooltipContent={<div className="flex flex-col items-center"><span>Holders: {pool.holders.toLocaleString()}</span></div>}
+                  tooltipContent={<HoldersTooltip value={pool.holders} />}
                 />
               </div>
               <div className="flex gap-1.5">
@@ -72,14 +75,14 @@ const TrenchCard = memo(function TrenchCard({ address, index }: TrenchCardProps)
                   value={pool.volumeUsd}
                   type="volume"
                   styleVariant="ghost"
-                  tooltipContent={<div className="flex flex-col items-center"><span>Volume: ${formatCompactNumber(parseFloat(pool.volumeUsd))}</span></div>}
+                  tooltipContent={<VolumeTooltip value={pool.volumeUsd} />}
                 />
                 <PoolStat
                   label="MC"
                   value={pool.marketCapUsd}
                   type="mcap"
                   styleVariant="ghost"
-                  tooltipContent={<div className="flex flex-col items-center"><span>Market Cap: ${formatCompactNumber(parseFloat(pool.marketCapUsd))}</span></div>}
+                  tooltipContent={<McapTooltip value={pool.marketCapUsd} />}
                 />
               </div>
             </div>
@@ -115,13 +118,13 @@ const TrenchCard = memo(function TrenchCard({ address, index }: TrenchCardProps)
                 label="TOP10"
                 value={`${pool.top10HolderPercent.toFixed(1)}%`}
                 type="generic"
-                tooltipContent={<div className="flex flex-col items-center"><span>Top 10 Holders: {pool.top10HolderPercent.toFixed(1)}%</span></div>}
+                tooltipContent={<Top10Tooltip value={pool.top10HolderPercent} />}
               />
               <PoolStat
                 icon={<ChefHat size={13} />}
                 value={pool.devPercent}
                 type="dev"
-                tooltipContent={<div className="flex flex-col items-center"><span>Dev: {pool.devPercent.toFixed(1)}% — {pool.devAddress.slice(0, 8)}…</span></div>}
+                tooltipContent={<DevTooltip devPercent={pool.devPercent} devAddress={pool.devAddress} />}
               />
               <div className="text-muted-foreground">
                 Tax B/S: <span className="text-white">{pool.taxBuy}/{pool.taxSell}</span>
@@ -133,5 +136,36 @@ const TrenchCard = memo(function TrenchCard({ address, index }: TrenchCardProps)
       </div>
   )
 })
+
+// Stable tooltip content components — prevent new JSX node per render
+const LiqTooltip = memo(({ value }: { value: string }) => (
+  <div className="flex flex-col items-center"><span>Liquidity: ${formatCompactNumber(parseFloat(value))}</span></div>
+))
+LiqTooltip.displayName = "LiqTooltip"
+
+const HoldersTooltip = memo(({ value }: { value: number }) => (
+  <div className="flex flex-col items-center"><span>Holders: {value.toLocaleString()}</span></div>
+))
+HoldersTooltip.displayName = "HoldersTooltip"
+
+const VolumeTooltip = memo(({ value }: { value: string }) => (
+  <div className="flex flex-col items-center"><span>Volume: ${formatCompactNumber(parseFloat(value))}</span></div>
+))
+VolumeTooltip.displayName = "VolumeTooltip"
+
+const McapTooltip = memo(({ value }: { value: string }) => (
+  <div className="flex flex-col items-center"><span>Market Cap: ${formatCompactNumber(parseFloat(value))}</span></div>
+))
+McapTooltip.displayName = "McapTooltip"
+
+const Top10Tooltip = memo(({ value }: { value: number }) => (
+  <div className="flex flex-col items-center"><span>Top 10 Holders: {value.toFixed(1)}%</span></div>
+))
+Top10Tooltip.displayName = "Top10Tooltip"
+
+const DevTooltip = memo(({ devPercent, devAddress }: { devPercent: number; devAddress: string }) => (
+  <div className="flex flex-col items-center"><span>Dev: {devPercent.toFixed(1)}% — {devAddress.slice(0, 8)}…</span></div>
+))
+DevTooltip.displayName = "DevTooltip"
 
 export default TrenchCard

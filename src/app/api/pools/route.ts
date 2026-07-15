@@ -17,7 +17,7 @@ export function GET(req: Request): NextResponse {
 
   updateCount++
 
-  const updates = generateValueUpdates(cachedPools, cachedPools.length)
+  const updates = generateValueUpdates(cachedPools, BATCH_SIZE)
   updates.forEach(u => {
     const idx = cachedPools!.findIndex(p => p.pairAddress === u.pairAddress)
     if (idx !== -1) cachedPools![idx] = { ...cachedPools![idx], ...u }

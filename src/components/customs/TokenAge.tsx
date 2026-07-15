@@ -1,13 +1,12 @@
 "use client"
 
-import { memo, useState, useEffect } from "react"
+import { memo, useState } from "react"
 import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip"
+import { useGlobalClock } from "@/app/trenches/_hooks/useGlobalClock"
 
 interface TokenAgeProps {
   eventTimestamp: number
 }
-
-const AGE_UPDATE_INTERVAL_MS = 1000
 
 function getRelativeTime(timestamp: number): string {
   const diff = Date.now() - timestamp
@@ -21,22 +20,14 @@ function getRelativeTime(timestamp: number): string {
   return `${days}d ${hours % 24}h`
 }
 
-function useTokenAge(eventTimestamp: number): string {
-  const [age, setAge] = useState(() => getRelativeTime(eventTimestamp))
-
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setAge(getRelativeTime(eventTimestamp))
-    }, AGE_UPDATE_INTERVAL_MS)
-    return () => clearInterval(interval)
-  }, [eventTimestamp])
-
-  return age
-}
-
 const TokenAge = memo(function TokenAge({ eventTimestamp }: TokenAgeProps) {
-  const age = useTokenAge(eventTimestamp)
+  const [age, setAge] = useState(() => getRelativeTime(eventTimestamp))
   const isoDate = new Date(eventTimestamp).toISOString()
+
+  // Uses global singleton RAF clock — no per-component setInterval
+  useGlobalClock(() => {
+    setAge(getRelativeTime(eventTimestamp))
+  })
 
   return (
     <Tooltip>
